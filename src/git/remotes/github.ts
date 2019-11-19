@@ -3,6 +3,8 @@ import { Range } from 'vscode';
 import { RemoteProvider } from './provider';
 import { AutolinkReference } from '../../config';
 import { DynamicAutolinkReference } from '../../annotations/autolinks';
+import { Container } from '../../container';
+import { PullRequest } from '../models/pullRequest';
 
 const issueEnricher3rdParyRegex = /\b(\w+\\?-?\w+(?!\\?-)\/\w+\\?-?\w+(?!\\?-))\\?#([0-9]+)\b/g;
 
@@ -46,18 +48,18 @@ export class GitHubRemote extends RemoteProvider {
 		return this.formatName('GitHub');
 	}
 
-	// enrichMessage(message: string): string {
-	// 	return (
-	// 		message
-	// 			// Matches #123 or gh-123 or GH-123
-	// 			.replace(issueEnricherRegex, `$1[$2](${this.baseUrl}/issues/$3 "Open Issue $2")`)
-	// 			// Matches eamodio/vscode-gitlens#123
-	// 			.replace(
-	// 				issueEnricher3rdParyRegex,
-	// 				`[$&](${this.protocol}://${this.domain}/$1/issues/$2 "Open Issue #$2 from $1")`
-	// 			)
-	// 	);
-	// }
+	private _prsByCommit = new Map<string, Promise<PullRequest | undefined>>();
+	async getPullRequestForCommit(ref: string): Promise<PullRequest | undefined> {
+		let pr = this._prsByCommit.get(ref);
+		if (pr === undefined) {
+			const [owner, repo] = this.splitPath();
+			pr = (await Container.github)?.getPullRequestForCommit(owner, repo, ref);
+			if (pr != null) {
+				this._prsByCommit.set(ref, pr);
+			}
+		}
+		return pr;
+	}
 
 	protected getUrlForBranches(): string {
 		return `${this.baseUrl}/branches`;

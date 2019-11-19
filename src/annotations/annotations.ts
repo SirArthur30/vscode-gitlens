@@ -19,7 +19,8 @@ import {
 	GitDiffHunkLine,
 	GitLogCommit,
 	GitService,
-	GitUri
+	GitUri,
+	PullRequest
 } from '../git/gitService';
 import { debug, Objects, Strings, timeout } from '../system';
 import { toRgba } from '../webviews/apps/shared/colors';
@@ -201,17 +202,41 @@ export class Annotations {
 			Container.git.getRemotes(commit.repoPath, { sort: true })
 		]);
 
-		const markdown = new MarkdownString(
-			CommitFormatter.fromTemplate(Container.config.hovers.detailsMarkdownFormat, commit, {
-				annotationType: annotationType,
-				dateFormat: dateFormat,
-				line: editorLine,
-				markdown: true,
-				presence: presence,
-				previousLineDiffUris: previousLineDiffUris,
-				remotes: remotes
-			})
-		);
+		let pr: PullRequest | undefined;
+		if (!commit.isUncommitted && remotes != null && remotes.length !== 0) {
+			const requests = [];
+			for (const remote of [...remotes].sort((a, b) => (a.default ? -1 : 1) - (b.default ? -1 : 1))) {
+				if (remote.provider?.getPullRequestForCommit === undefined) continue;
+
+				const promise = remote.provider?.getPullRequestForCommit?.(commit.ref);
+				if (promise !== undefined) {
+					requests.push(promise);
+					if (remote.default) break;
+				}
+			}
+
+			if (requests.length !== 0) {
+				try {
+					const prs = await Promise.all(requests);
+					if (prs != null) {
+						pr = prs.find(pr => pr != null);
+					}
+				} catch {}
+			}
+		}
+
+		const details = CommitFormatter.fromTemplate(Container.config.hovers.detailsMarkdownFormat, commit, {
+			annotationType: annotationType,
+			dateFormat: dateFormat,
+			line: editorLine,
+			markdown: true,
+			pr: pr,
+			presence: presence,
+			previousLineDiffUris: previousLineDiffUris,
+			remotes: remotes
+		});
+
+		const markdown = new MarkdownString(details);
 		markdown.isTrusted = true;
 		return markdown;
 	}

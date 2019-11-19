@@ -5,6 +5,7 @@ import { Logger } from '../../logger';
 import { Messages } from '../../messages';
 import { GitLogCommit } from '../models/logCommit';
 import { DynamicAutolinkReference } from '../../annotations/autolinks';
+import { PullRequest } from '../models/pullRequest';
 
 export enum RemoteResourceType {
 	Branch = 'branch',
@@ -139,6 +140,8 @@ export abstract class RemoteProvider {
 			return Messages.showGenericErrorMessage('Unable to copy remote url');
 		}
 	}
+
+	getPullRequestForCommit?(ref: string): Promise<PullRequest | undefined>;
 
 	open(resource: RemoteResource): Thenable<{} | undefined> {
 		return this.openUrl(this.url(resource));
