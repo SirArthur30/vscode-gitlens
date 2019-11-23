@@ -5928,7 +5928,7 @@
 		"clean-webpack-plugin": "3.0.0",
 		"csp-html-webpack-plugin": "3.0.4",
 		"css-loader": "3.2.0",
-		"eslint": "6.6.0",
+		"eslint": "6.7.0",
 		"eslint-cli": "1.1.1",
 		"eslint-config-prettier": "6.7.0",
 		"eslint-plugin-import": "2.18.2",
