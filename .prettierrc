@@ -5,7 +5,7 @@
 	"useTabs": true,
 	"overrides": [
 		{
-			"files": ".prettierrc",
+			"files": ".prettier",
 			"options": { "parser": "json" }
 		},
 		{
